@@ -17,23 +17,28 @@ class ClientThread(threading.Thread):
         self.msg = ""
 
     def run(self):
-        print("Connexion de %s %s" % (self.ip, self.port, ))
-        while (1):
-            self.size = self.clientsocket.recv(10)
-            self.prepare = self.clientsocket.recv(int(self.size))
-            self.msg = pickle.loads(self.prepare)
-            if (self.msg.find("exit") != -1):
-                break
-            print("Message reçu de " + str(self.msg))
-            for x in client_list:
-                if (self.clientsocket != x):
-                    x.send(self.size + self.prepare)
-        client_list.remove(self.clientsocket)
-        print("Client %s %s disconnected" % (self.ip, self.port, ))
-
-    def update(self):
-        pass
-
+        try:
+            print("Connexion de %s %s" % (self.ip, self.port, ))
+            while (1):
+                self.size = self.clientsocket.recv(10)
+                self.prepare = self.clientsocket.recv(int(self.size))
+                self.msg = pickle.loads(self.prepare)
+                if (self.msg.find("exit") != -1):
+                    break
+                print("Message reçu de " + str(self.msg))
+                for x in client_list:
+                    if (self.clientsocket != x):
+                        x.send(self.size + self.prepare)
+            client_list.remove(self.clientsocket)
+            self.msg = pickle.dumps("exit")
+            self.prepare = str(len(self.msg))
+            while (len(self.prepare) < 10):
+                self.prepare += " "
+            self.clientsocket.send(bytes(self.prepare, "utf-8") + self.msg)
+            print("Client %s %s disconnected" % (self.ip, self.port, ))
+        except:
+            print("Client %s %s disconnected" % (self.ip, self.port, ))
+            client_list.remove(self.clientsocket)
 
 tcpsock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 tcpsock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
